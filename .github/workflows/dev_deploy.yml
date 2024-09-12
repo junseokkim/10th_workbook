@@ -42,8 +42,8 @@ jobs:
           USER: ubuntu # Ubuntu 사용자명
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          # EC2에 애플리케이션 디렉터리 생성
-          ssh -i private_key -o StrictHostKeyChecking=no ${USER}@${HOST} 'mkdir -p /opt/myapp'
+          # EC2에 애플리케이션 디렉터리 생성 (sudo 권한 사용)
+          ssh -i private_key -o StrictHostKeyChecking=no ${USER}@${HOST} 'sudo mkdir -p /opt/myapp'
           # JAR 파일 전송
           scp -i private_key -o StrictHostKeyChecking=no build/libs/*.jar ${USER}@${HOST}:/opt/myapp/app.jar
           # 애플리케이션 배포
@@ -51,3 +51,4 @@ jobs:
             sudo systemctl stop myapp || true
             sudo mv /opt/myapp/app.jar /opt/myapp/app.jar
             sudo systemctl start myapp
+          '
