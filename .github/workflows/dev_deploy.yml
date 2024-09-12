@@ -54,15 +54,31 @@ jobs:
           ls -l build/libs
 
           # JAR 파일이 제대로 빌드되고 있는지 확인
-          JAR_FILE=$(ls build/libs/*.jar | head -n 1)
+          JAR_FILE=$(ls build/libs/*SNAPSHOT.jar | head -n 1)
           echo "Deploying $JAR_FILE"
 
           # JAR 파일 전송
           scp -i private_key -o StrictHostKeyChecking=no "$JAR_FILE" ${USER}@${HOST}:/opt/myapp/app.jar
 
+          # EC2에서 systemd 서비스 파일 생성
+          ssh -i private_key -o StrictHostKeyChecking=no ${USER}@${HOST} '
+            echo "[Unit]
+            Description=MyApp Service
+            After=network.target
+
+            [Service]
+            User=${USER}
+            ExecStart=/usr/bin/java -jar /opt/myapp/app.jar
+            Restart=always
+
+            [Install]
+            WantedBy=multi-user.target" | sudo tee /etc/systemd/system/myapp.service
+            sudo systemctl daemon-reload
+            sudo systemctl enable myapp
+          '
+
           # 애플리케이션 배포
           ssh -i private_key -o StrictHostKeyChecking=no ${USER}@${HOST} '
             sudo systemctl stop myapp || true
-            sudo mv /opt/myapp/app.jar /opt/myapp/app.jar
             sudo systemctl start myapp
           '
