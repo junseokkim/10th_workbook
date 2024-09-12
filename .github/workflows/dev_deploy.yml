@@ -39,7 +39,7 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           HOST: ${{ secrets.EC2_HOST }}
-          USER: ubuntu # 다른 인스턴스 유형 사용 시 해당 유저명 변경
+          USER: ubuntu
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
 
@@ -50,8 +50,15 @@ jobs:
             fi
           '
 
+          # JAR 파일 빌드 경로 확인
+          ls -l build/libs
+
+          # JAR 파일이 제대로 빌드되고 있는지 확인
+          JAR_FILE=$(ls build/libs/*.jar | head -n 1)
+          echo "Deploying $JAR_FILE"
+
           # JAR 파일 전송
-          scp -i private_key -o StrictHostKeyChecking=no build/libs/*.jar ${USER}@${HOST}:/opt/myapp/app.jar
+          scp -i private_key -o StrictHostKeyChecking=no "$JAR_FILE" ${USER}@${HOST}:/opt/myapp/app.jar
 
           # 애플리케이션 배포
           ssh -i private_key -o StrictHostKeyChecking=no ${USER}@${HOST} '
